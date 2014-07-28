@@ -6,6 +6,8 @@
 var topFamilies = 3;
 var topMembers = 3;
 
+var Map = {  XX: 'Empty', VV: 'Heat&nbsp;Vent', VR: 'Reactor&nbsp;Heat&nbsp;Vent', VA: 'Advanced&nbsp;Heat&nbsp;Vent', VC: 'Component&nbsp;Heat&nbsp;Vent', VO: 'Overclocked&nbsp;Heat&nbsp;Vent', EE: 'Heat&nbsp;Exchanger', EA: 'Advanced&nbsp;Heat&nbsp;Exchanger', ER: 'Reactor&nbsp;Heat&nbsp;Exchanger', EC: 'Component&nbsp;Heat&nbsp;Exchanger', C1: '10k&nbsp;Coolant&nbsp;Cell', C3: '30k&nbsp;Coolant&nbsp;Cell', C6: '60k&nbsp;Coolant&nbsp;Cell', CR: 'RSH&nbsp;Condensator', CL: 'LZH&nbsp;Condensator', U1: 'Uranium&nbsp;Fuel&nbsp;Rod', U2: 'Dual&nbsp;Uranium&nbsp;Fuel&nbsp;Rod', U4: 'Quad&nbsp;Uranium&nbsp;Fuel&nbsp;Rod', NN: 'Neutron&nbsp;Reflector', NT: 'Thick&nbsp;Neutron&nbsp;Reflector', PP: 'Reactor&nbsp;Plating', PC: 'Containment&nbsp;Reactor&nbsp;Plating', PH: 'Heat&nbsp;Capacity&nbsp;Reactor&nbsp;Plating'}
+
 function show(data) {
 	$('#genctr').text(data.curGeneration);
 	var main = $('#main');
@@ -20,28 +22,42 @@ function show(data) {
 		population.families.forEach(function(family, familyIdx) {
 			main.append($('<h3 />').text('Family ' + familyIdx).addClass('family-title'));
 			main.append($('<div />').text('Top score changed ' + (data.curGeneration - family.lastGenerationScoreChange) + ' generations ago').addClass('top-score-changed'));
-			var familyDiv = $('<div />').addClass('family-div');
+			var familyDiv = $('<div />').addClass('row');
 			family.members.forEach(function(member) {
 				var reactorTable = $('<table />');
 				var dataIdx = 0;
 				for(var rowNum = 0; rowNum < member.grid.height; rowNum++) {
 					var tableRow = $('<tr />');
 					for(var colNum = 0; colNum < member.grid.width; colNum++) {
+						var componentId = member.grid.data[dataIdx++];
 						tableRow.append(
 							$('<td />').append(
-								$('<img />').addClass(member.grid.data[dataIdx++].toLowerCase()).attr('src', 'img/XX.png')
-							)
+								$('<a />').append($('<img />').addClass(componentId.toLowerCase()).attr('src', 'img/XX.png'),$('<span />').append(Map[componentId])).addClass('ttip').attr('href', '#')
+							).attr('class','icon')
 						);
 					}
 					reactorTable.append(tableRow);
 				}
-				var reactorSpan = $('<span />');
-				reactorSpan.append($('<div />').append(reactorTable));
+				var reactorSpan = $('<div />').addClass('column');
+				reactorSpan.append($('<div />').append(reactorTable).addClass('row'));
 
-				var resultsDiv = $('<div />');
+				var resultsDiv = $('<div />').addClass('container');
+				//edit
+				var tr1 = $('<tr />');
+				tr1.append($('<td />').text('Efficiency:').attr('class', 'eff').attr('colspan','2'));
+				tr1.append($('<td />').text(member.results['efficiency'].toFixed(2)).attr('class','eff').attr('colspan','3'));
+				tr1.append($('<td />').text(member.results['euPerTick'] + ' EU/T').attr('class','eupt').attr('colspan','4'));
+				reactorTable.append(tr1);
+				
+				var resultsTable = $('<table />').attr('style','width:252px');
+				
+				//endedit
 				function addResult(name, value) {
 					if(typeof value != 'number' || (value != 0 && value != -1)) {
-						resultsDiv.append($('<div />').text('' + name + ': ' + value));
+						var tr2 = $('<tr />');
+						tr2.append($('<td />').text(name).attr('class','eff'),$('<td />').text(value).attr('class','eupt ralign pad'));
+						resultsTable.append(tr2);//
+
 					}
 				}
 				var resultsNameMap = {
@@ -58,12 +74,14 @@ function show(data) {
 				};
 				Object.keys(resultsNameMap).forEach(function(rid) {
 					if(member.results[rid]) {
-						addResult(resultsNameMap[rid], member.results[rid]);
+						if(resultsNameMap[rid] != 'EU/t' && resultsNameMap[rid] != 'Efficiency'){
+							addResult(resultsNameMap[rid], member.results[rid]);
+						}
 					}
 				});
-				addResult('Score', member.score);
-
-				reactorSpan.append(resultsDiv);
+				addResult('Score', member.score.toFixed(5));
+				
+				reactorSpan.append(resultsTable);//
 
 				familyDiv.append(reactorSpan);
 			});
@@ -96,11 +114,13 @@ updateLoop();
 		</script>
 	</head>
 	<body>
+		<div class="container">
 		<h1>Genetic Reactor Status</h1>
 		<div>
 			Current generation: <span id="genctr">--</span>
 		</div>
 		<div id="main">
+		</div>
 		</div>
 	</body>
 </html>
